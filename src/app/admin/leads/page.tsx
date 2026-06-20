@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CheckCircle2, CircleX, ExternalLink, House, MessageSquareText, PhoneCall, Search } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { getDb } from "@/lib/db";
+import { DeleteLeadButton } from "./delete-lead-button";
 import { LeadStatusActions } from "./lead-status-actions";
 
 export const metadata: Metadata = { title: "线索管理" };
@@ -134,6 +135,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   <div><strong>是否匿名：</strong>{lead.is_anonymous ? "是" : "否"}</div>
                   <div><strong>线索状态：</strong>{statusLabels[lead.status || "new"] || "新线索"}</div>
                   <LeadStatusActions id={lead.id} initialStatus={lead.status || "new"} />
+                  <DeleteLeadButton id={lead.id} />
                   <Link className="secondary-button" style={{ width: "fit-content", marginTop: 5 }} href={`/lost/${lead.lost_report_id}`} target="_blank">
                     <ExternalLink size={16} /> 查看寻宠详情
                   </Link>

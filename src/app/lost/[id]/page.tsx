@@ -24,8 +24,20 @@ async function findReport(id: string) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const report = await findReport(id);
-  const description = report ? `${report.pet_name}在${report.lost_location}附近走失，请帮忙留意和转发。` : "寻宠启事";
-  return report ? { title: `紧急寻找${report.pet_name}`, description, openGraph: { title: `请帮忙寻找${report.pet_name}`, description, type: "article", images: [{ url: report.photo_url, alt: `${report.pet_name}的寻宠照片` }] } } : { title: "寻宠启事" };
+  const city = report?.city?.trim() || "本地";
+  const petName = report?.pet_name?.trim() || "宠物";
+  const lostLocation = report?.lost_location?.trim() || "暂未填写";
+  const rawFeatures = report?.features?.trim() || "暂未填写";
+  const features = rawFeatures.length > 60 ? `${rawFeatures.slice(0, 60)}…` : rawFeatures;
+  const title = `【公益寻宠】${city}${petName}走失，请帮忙留意`;
+  const description = `${city}宠物走失信息，走失地点：${lostLocation}，特征：${features}。爱心人士可查看详情并提供线索。`;
+  return {
+    title,
+    description,
+    openGraph: report
+      ? { title, description, type: "article", images: [{ url: report.photo_url, alt: `${petName}的寻宠照片` }] }
+      : { title, description, type: "article" },
+  };
 }
 
 export default async function LostDetailPage({

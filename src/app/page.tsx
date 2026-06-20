@@ -155,6 +155,41 @@ export default async function Home() {
         )}
       </section>
 
+      <section className="home-section" aria-label="平台信任与使用说明" style={{ display: "grid", gap: 12, paddingTop: 0 }}>
+        <article style={{ padding: 17, background: "#fff", border: "1px solid var(--line)", borderLeft: "4px solid var(--teal)", borderRadius: 8 }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 7, margin: "0 0 12px", fontSize: 19 }}><ShieldCheck size={20} /> 平台如何保护隐私</h2>
+          <ul style={{ display: "grid", gap: 7, margin: 0, paddingLeft: 20, color: "#4c5961", fontSize: 12, lineHeight: 1.6 }}>
+            <li>联系方式不会直接公开展示</li>
+            <li>爱心人士通过线索系统提交信息</li>
+            <li>宠物主可通过详情页相关流程查看线索，平台后台协助整理</li>
+            <li>用户可以复制微信、小红书、朋友圈文案主动扩散</li>
+            <li>平台不承诺找回结果，只提供公益协作和信息扩散工具</li>
+          </ul>
+        </article>
+
+        <article style={{ padding: 17, background: "#fff", border: "1px solid var(--line)", borderLeft: "4px solid var(--coral)", borderRadius: 8 }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 7, margin: "0 0 12px", fontSize: 19 }}><Search size={20} /> 寻宠协作流程</h2>
+          <ol style={{ display: "grid", gap: 7, margin: 0, paddingLeft: 22, color: "#4c5961", fontSize: 12, lineHeight: 1.6 }}>
+            <li>发布寻宠信息</li>
+            <li>生成公益寻宠详情页</li>
+            <li>复制微信群 / 小红书 / 朋友圈文案扩散</li>
+            <li>爱心人士提交线索</li>
+            <li>平台后台协助整理和跟进</li>
+          </ol>
+        </article>
+
+        <article style={{ padding: 17, background: "#fff", border: "1px solid var(--line)", borderLeft: "4px solid var(--yellow)", borderRadius: 8 }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 7, margin: "0 0 12px", fontSize: 19 }}><HeartHandshake size={20} /> 适合谁使用</h2>
+          <ul style={{ display: "grid", gap: 7, margin: 0, paddingLeft: 20, color: "#4c5961", fontSize: 12, lineHeight: 1.6 }}>
+            <li>正在寻找走失宠物的主人</li>
+            <li>愿意帮忙留意的爱心人士</li>
+            <li>同城宠物群管理员</li>
+            <li>流浪动物救助者</li>
+            <li>宠物摄影、寄养、训练等本地服务者</li>
+          </ul>
+        </article>
+      </section>
+
       <section className="home-section service-section">
         <div className="section-heading">
           <div>

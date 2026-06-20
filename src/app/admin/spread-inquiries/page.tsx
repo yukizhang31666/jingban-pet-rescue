@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CheckCircle2, CircleX, ExternalLink, MessageSquareText, PhoneCall } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { getDb } from "@/lib/db";
+import { DeleteSpreadInquiryButton } from "./delete-spread-inquiry-button";
 import { SpreadInquiryStatusActions } from "./spread-inquiry-status-actions";
 
 export const metadata: Metadata = { title: "扩散服务咨询" };
@@ -100,6 +101,7 @@ export default async function SpreadInquiriesPage({ searchParams }: { searchPara
                   <div><strong>备注：</strong>{inquiry.note || "未填写"}</div>
                   <div><strong>状态：</strong>{statusLabels[inquiry.status || "new"] || "新咨询"}</div>
                   <SpreadInquiryStatusActions id={inquiry.id} initialStatus={inquiry.status || "new"} />
+                  <DeleteSpreadInquiryButton id={inquiry.id} />
                   <Link className="secondary-button" style={{ width: "fit-content", marginTop: 5 }} href={`/lost/${inquiry.lost_report_id}`} target="_blank">
                     <ExternalLink size={16} /> 查看寻宠详情
                   </Link>

@@ -4,6 +4,7 @@ import { CheckCircle2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { apiUrl } from "@/lib/api-url";
+import { platformContact } from "@/lib/site-config";
 
 const benefits = [
   "微信群扩散文案",
@@ -33,6 +34,12 @@ export function BasicSpreadOffer() {
       <ul>
         {benefits.map((benefit) => <li key={benefit}><CheckCircle2 size={16} /> {benefit}</li>)}
       </ul>
+      <div style={{ display: "grid", gap: 6, marginBottom: 14, padding: 13, color: "#315f58", background: "#eaf6f3", borderLeft: "3px solid var(--teal)", fontSize: 12, lineHeight: 1.6 }}>
+        <strong>平台人工开通方式：</strong>
+        <span>微信：{platformContact.wechat}</span>
+        <span>手机：{platformContact.phone}</span>
+        <span>添加备注：{platformContact.note}</span>
+      </div>
       {!formOpen ? (
         <button className="primary-button" style={{ width: "100%" }} type="button" onClick={() => setFormOpen(true)}>联系平台开通</button>
       ) : (

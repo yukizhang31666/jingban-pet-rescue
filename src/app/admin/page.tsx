@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CheckCircle2, ExternalLink, House, Megaphone, MessageSquareText, Plus, Search } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { getDb } from "@/lib/db";
+import { platformContact } from "@/lib/site-config";
 
 export const metadata: Metadata = { title: "后台管理中心" };
 export const dynamic = "force-dynamic";
@@ -81,6 +82,13 @@ export default async function AdminHomePage() {
             <Link className="secondary-button" href="/admin/leads"><MessageSquareText size={16} /> 线索管理</Link>
           </div>
         </header>
+
+        <aside style={{ display: "grid", gap: 5, marginBottom: 20, padding: 14, color: "#315f58", background: "#eaf6f3", borderLeft: "4px solid var(--teal)", borderRadius: 7, fontSize: 12, lineHeight: 1.6 }}>
+          <strong>当前平台联系方式：</strong>
+          <span>微信：{platformContact.wechat}</span>
+          <span>手机：{platformContact.phone}</span>
+          <span>备注：{platformContact.note}</span>
+        </aside>
 
         <section className="admin-stats" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", marginBottom: 24 }}>
           {stats.map((item) => {
