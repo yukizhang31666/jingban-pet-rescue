@@ -13,9 +13,18 @@ import { BasicSpreadOffer } from "./basic-spread-offer";
 import { CopyLostTextButton } from "./copy-lost-text-button";
 import { LeadHintButton } from "./lead-hint-button";
 import { getDb, type LostRow } from "@/lib/db";
+import { formatDateTime, formatLocation } from "@/lib/format";
 import { appendConversionStage, recordGrowthEvent } from "@/lib/pet-growth";
+import { siteConfig } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
+
+const reportStatusLabels: Record<string, string> = {
+  searching: "寻找中",
+  lead: "疑似有线索",
+  found: "已找回",
+  closed: "已关闭",
+};
 
 async function findReport(id: string) {
   return await getDb().prepare("SELECT * FROM lost_reports WHERE public_id = ?").get<LostRow>(id);
@@ -24,19 +33,26 @@ async function findReport(id: string) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const report = await findReport(id);
-  const city = report?.city?.trim() || "本地";
+  if (!report) return { title: "宠物走失信息 - 鲸伴", description: "查看宠物走失信息与线索提交入口，帮助更多人看到寻宠信息。" };
   const petName = report?.pet_name?.trim() || "宠物";
-  const lostLocation = report?.lost_location?.trim() || "暂未填写";
-  const rawFeatures = report?.features?.trim() || "暂未填写";
-  const features = rawFeatures.length > 60 ? `${rawFeatures.slice(0, 60)}…` : rawFeatures;
-  const title = `【公益寻宠】${city}${petName}走失，请帮忙留意`;
-  const description = `${city}宠物走失信息，走失地点：${lostLocation}，特征：${features}。爱心人士可查看详情并提供线索。`;
+  const formattedLocation = formatLocation({ city: report.city, lost_location: report.lost_location });
+  const hasLocation = formattedLocation !== "位置暂未填写";
+  const found = report.status === "found";
+  const title = found ? `${petName}已找回｜鲸伴成功寻宠案例` : `寻找${petName}｜${hasLocation ? `${formattedLocation}宠物走失信息` : "宠物走失信息"} - 鲸伴`;
+  const description = found
+    ? `${petName}已找回。查看这条成功寻宠案例，了解城市协作、线索收集和信息扩散如何帮助宠物被看见。`
+    : `${petName}正在寻找中。查看宠物走失时间、地点、特征和线索提交入口，帮助转发扩散，让更多人看到这条寻宠信息。`;
   return {
     title,
     description,
-    openGraph: report
-      ? { title, description, type: "article", images: [{ url: report.photo_url, alt: `${petName}的寻宠照片` }] }
-      : { title, description, type: "article" },
+    alternates: { canonical: `${siteConfig.url}/lost/${id}` },
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      url: `${siteConfig.url}/lost/${id}`,
+      ...(report.photo_url ? { images: [{ url: report.photo_url, alt: `${petName}的寻宠照片` }] } : {}),
+    },
   };
 }
 
@@ -52,6 +68,7 @@ export default async function LostDetailPage({
   const justCreated = query.created === "1";
   const report = await findReport(id);
   if (!report) notFound();
+  const reportStatus = reportStatusLabels[report.status] || "寻找中";
   const db = getDb();
   await db.prepare("UPDATE lost_reports SET views = views + 1 WHERE public_id = ?").run(id);
   if (report.pet_id) {
@@ -59,81 +76,111 @@ export default async function LostDetailPage({
     await recordGrowthEvent(db, report.pet_id, "page_view", "lost-detail", "", { lostId: id });
   }
 
-  const displayTime = report.lost_time.replace("T", " ");
+  const formattedCity = formatLocation({ city: report.city });
+  const cityText = formattedCity === "位置暂未填写" ? "本地" : formattedCity;
+  const lostLocationDisplay = formatLocation({ lost_location: report.lost_location });
+  const lostLocationText = lostLocationDisplay === "位置暂未填写" ? "附近" : lostLocationDisplay;
+  const displayTime = formatDateTime(report.lost_time);
+  const displayLocation = formatLocation(report);
+  const petNameText = report.pet_name?.trim() || "宠物";
+  const featuresText = report.features?.trim() || "暂未填写";
   const rewardText = report.reward > 0 ? `${report.reward}元` : "当面感谢";
   const wearingText = report.wearing_items || "未填写";
   const temperamentText = report.temperament || "未填写";
-  const detailUrl = `${(process.env.API_URL || "").replace(/\/$/, "")}/lost/${id}`;
-  const cityText = report.city || "当地";
+  const siteUrl = (process.env.API_URL || "https://jingbantech.com").replace(/\/$/, "");
+  const detailUrl = `${siteUrl}/lost/${id}`;
   const publicSpreadCopy = `【全国公益寻宠】
 
-城市：${[report.province, report.city].filter(Boolean).join(" ")}
-宠物：${report.pet_name}
-走失地点：${report.lost_location}
+城市：${displayLocation}
+宠物：${petNameText}
+走失地点：${lostLocationDisplay}
 走失时间：${displayTime}
-特征：${report.features}
+特征：${featuresText}
 
 如果你看到它，请帮忙提供线索。
 
 查看详情：${detailUrl}`;
-  const platformSpreadTemplates = [
+  const mobileSpreadTemplates = [
     {
-      title: "微信群版本",
-      text: `【帮忙扩散一下】
-${cityText}有一只宠物走失了。
-
-宠物：${report.pet_name}
-走失地点：${report.lost_location}
-走失时间：${displayTime}
-特征：${report.features}
-
-如果你在附近看到过，请点开详情提供线索：
-${detailUrl}`,
+      title: "微信群版",
+      text: `【${cityText}${lostLocationText}寻宠】
+${petNameText}走失，走失时间：${displayTime}。
+特征：${featuresText}
+看到请不要惊吓或追赶，可通过详情页提交线索：
+${detailUrl}
+感谢大家帮忙扩散。`,
     },
     {
-      title: "小红书版本",
-      text: `标题：
-${cityText}寻宠｜如果你看到这只${report.pet_name}请帮忙
-
-正文：
-今天看到一条公益寻宠信息，宠物主非常着急。
-走失城市：${cityText}
-走失地点：${report.lost_location}
-走失时间：${displayTime}
-明显特征：${report.features}
-
-如果你在附近，麻烦帮忙留意一下。
-详情和线索入口：${detailUrl}
-
-标签：
-#寻宠 #宠物走失 #同城寻宠 #公益寻宠 #${cityText}寻宠`,
+      title: "朋友圈版",
+      text: `一只宠物在${cityText}${lostLocationText}附近走失了，名字叫${petNameText}。
+它的特征是：${featuresText}
+如果你刚好在附近，麻烦帮忙留意一下。
+线索可以通过这个页面提交：
+${detailUrl}
+谢谢每一个帮忙转发的人。`,
     },
     {
-      title: "朋友圈版本",
-      text: `帮忙扩散一下🙏
-${cityText}一只宠物走失了，主人正在寻找。
+      title: "小红书标题",
+      text: `${cityText}${lostLocationText}｜${petNameText}走失，请帮忙留意`,
+    },
+    {
+      title: "小红书正文",
+      text: `📍城市：${cityText}
+📍走失地点：${lostLocationText}
+⏰走失时间：${displayTime}
+🐾宠物名字：${petNameText}
+🔎明显特征：${featuresText}
 
-地点：${report.lost_location}
-时间：${displayTime}
-特征：${report.features}
+如果你在附近看到类似宠物，请不要追赶或惊吓，可以通过详情页提交线索：
+${detailUrl}
 
-看到类似宠物的朋友，可以点开详情提供线索：
-${detailUrl}`,
+希望它能早点回家，也感谢大家帮忙扩散。`,
+    },
+    {
+      title: "紧急版",
+      text: `紧急寻宠：${petNameText}在${cityText}${lostLocationText}附近走失。
+走失时间：${displayTime}
+特征：${featuresText}
+如看到请先拍照记录位置，不要贸然追赶。
+线索提交：${detailUrl}`,
     },
   ];
-  const momentsCopy = `请帮忙扩散寻找${report.pet_name}！${displayTime}在${report.last_seen_location || report.lost_location}最后出现。特征：${report.features}。${report.reward > 0 ? `悬赏${report.reward}元。` : ""}看到相似宠物请打开公益寻宠页匿名提交线索：${detailUrl}`;
-  const wechatCopy = `【${report.urgency}寻宠｜请群友帮忙扩散】${report.pet_name}于${displayTime}在${report.lost_location}走失，最后出现：${report.last_seen_location || report.lost_location}。明显特征：${report.features}；佩戴：${wearingText}；性格：${temperamentText}。${report.reward > 0 ? `悬赏${report.reward}元。` : ""}请勿追赶或围堵，发现线索请进入平台匿名提交：${detailUrl}`;
-  const redCopy = `求同城扩散！${report.pet_name}还在等我们带它回家\n\n紧急程度：${report.urgency}\n走失区域：${report.lost_location}\n最后出现：${report.last_seen_location || report.lost_location}\n走失时间：${displayTime}\n明显特征：${report.features}\n走失时佩戴：${wearingText}\n宠物性格：${temperamentText}\n${report.reward > 0 ? `线索感谢：${report.reward}元\n` : ""}\n为了保护双方隐私，看到相似宠物请进入公益寻宠页匿名提交线索：${detailUrl}\n\n#寻宠启事 #宠物走失 #同城寻宠 #${report.lost_location.slice(0, 8)} #鲸伴公益寻宠`;
-  const douyinCopy = `10秒寻宠口播脚本\n0-2秒：展示${report.pet_name}照片，字幕“请停留10秒，帮它回家”\n2-5秒：口播“${displayTime}，${report.pet_name}在${report.last_seen_location || report.lost_location}附近走失”\n5-8秒：特写明显特征，字幕“${report.features}”\n8-10秒：展示寻宠二维码，口播“看到它请不要追赶，扫码匿名提交线索，转发给附近的人”\n发布文案：每一次转发都可能缩短它回家的距离。公益详情：${detailUrl}`;
-  const posterLines = [`最后出现：${report.last_seen_location || report.lost_location}`, `走失时佩戴：${wearingText}`, `明显特征：${report.features}`, "扫码匿名提交线索 · 请帮助扩散"];
+  if (report.status === "found") {
+    mobileSpreadTemplates.push({
+      title: "找回成功版",
+      text: `【好消息】${cityText}${petNameText}已找回！
+感谢所有帮忙扩散、留意和提供线索的朋友。
+也希望更多走失宠物都能平安回家。
+鲸伴公益寻宠平台：${siteUrl}`,
+    });
+  }
+  const posterLines = [`最后出现：${formatLocation({ lost_location: report.last_seen_location || report.lost_location })}`, `走失时佩戴：${wearingText}`, `明显特征：${featuresText}`, "扫码匿名提交线索 · 请帮助扩散"];
+  const pageStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: report.status === "found" ? `${petNameText}已找回` : `寻找${petNameText}`,
+    url: `${siteConfig.url}/lost/${id}`,
+    description: report.status === "found" ? "宠物成功找回案例页面" : "宠物走失信息与线索收集页面",
+  };
 
   return (
     <MobileShell>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData).replace(/</g, "\\u003c") }} />
       <article className="identity-page">
         <div className="lost-alert">
           <strong>公益寻宠信息｜正在扩散中</strong>
           <span>这是一条由宠物主发布的全国公益寻宠信息，看到线索的爱心人士可以帮助扩散或提供线索。</span>
         </div>
+        {report.status === "found" && (
+          <section style={{ margin: 14, padding: 14, color: "#315f58", background: "#eaf6f3", borderLeft: "4px solid var(--teal)", borderRadius: 7, fontSize: 12, lineHeight: 1.65 }}>
+            这只宠物已找回，感谢所有帮忙扩散和提供线索的爱心人士。
+          </section>
+        )}
+        {report.status === "closed" && (
+          <section style={{ margin: 14, padding: 14, color: "#665711", background: "#fff7d6", borderLeft: "4px solid var(--yellow)", borderRadius: 7, fontSize: 12, lineHeight: 1.65 }}>
+            这条寻宠信息已关闭，暂不再收集线索。
+          </section>
+        )}
         {justCreated && (
           <section style={{ margin: 14, padding: 16, color: "#315f58", background: "#eaf6f3", borderLeft: "4px solid var(--teal)", borderRadius: 7 }}>
             <h2 style={{ margin: "0 0 7px", color: "var(--ink)", fontSize: 18 }}>发布成功，建议立即扩散</h2>
@@ -144,7 +191,7 @@ ${detailUrl}`,
         <LostSpreadStatus lostId={report.public_id} views={report.views + 1} shares={report.share_count} />
         <div className="identity-hero">
           <Image src={report.photo_url} alt={`${report.pet_name}的寻宠照片`} fill priority sizes="(max-width: 520px) 100vw, 520px" />
-          <span className="status-chip alert"><Search size={16} /> {report.status}</span>
+          <span className="status-chip alert"><Search size={16} /> {reportStatus}</span>
         </div>
 
         <section className="identity-panel">
@@ -153,8 +200,9 @@ ${detailUrl}`,
             <span className="id-seal" style={{ background: "var(--coral)" }}><Search size={26} /></span>
           </div>
           <div className="lost-facts" style={{ marginTop: 22 }}>
-            <div className="fact-row"><MapPin size={19} /><span>走失地点</span><strong>{report.lost_location}</strong></div>
-            <div className="fact-row"><Search size={19} /><span>最后出现</span><strong>{report.last_seen_location || report.lost_location}</strong></div>
+            <div className="fact-row"><MapPin size={19} /><span>所在地区</span><strong>{formatLocation(report)}</strong></div>
+            <div className="fact-row"><MapPin size={19} /><span>走失地点</span><strong>{lostLocationDisplay}</strong></div>
+            <div className="fact-row"><Search size={19} /><span>最后出现</span><strong>{formatLocation({ lost_location: report.last_seen_location || report.lost_location })}</strong></div>
             <div className="fact-row"><CalendarClock size={19} /><span>走失时间</span><strong>{displayTime}</strong></div>
             <div className="fact-row"><MessageCircle size={19} /><span>明显特征</span><strong>{report.features}</strong></div>
             <div className="fact-row"><MessageCircle size={19} /><span>佩戴物</span><strong>{wearingText}</strong></div>
@@ -170,26 +218,23 @@ ${detailUrl}`,
           <div className="private-contact"><ShieldCheck size={18} /> 线索进入鲸伴后台，由工作人员核对并中转给主人。</div>
         </section>
 
-        <section className="identity-section">
+        <section className="identity-section" id="share-templates" style={{ scrollMarginTop: 78 }}>
           <h2>一键复制扩散文案</h2>
-          <div className="copy-list">
-            <article className="copy-item">
-              <header><strong>朋友圈海报文案</strong><CopyButton text={momentsCopy} targetType="lost" targetId={report.public_id} channel="moments-copy" /></header>
-              <p>{momentsCopy}</p>
-            </article>
-            <article className="copy-item">
-              <header><strong>微信群扩散文案</strong><CopyButton text={wechatCopy} targetType="lost" targetId={report.public_id} channel="wechat-group-copy" /></header>
-              <p>{wechatCopy}</p>
-            </article>
-            <article className="copy-item">
-              <header><strong>小红书发布内容</strong><CopyButton text={redCopy} targetType="lost" targetId={report.public_id} channel="xiaohongshu-copy" /></header>
-              <p>{redCopy}</p>
-            </article>
-            <article className="copy-item">
-              <header><strong>抖音10秒脚本</strong><CopyButton text={douyinCopy} targetType="lost" targetId={report.public_id} channel="douyin-copy" /></header>
-              <p>{douyinCopy}</p>
-            </article>
+          <p>适合发到微信群、朋友圈、小红书，帮助更多同城爱心人士看到。</p>
+          <div className="copy-list" style={{ marginTop: 16 }}>
+            {mobileSpreadTemplates.map((template, index) => (
+              <article className="copy-item" key={template.title}>
+                <header><strong>{template.title}</strong><CopyButton text={template.text} targetType="lost" targetId={report.public_id} channel={`mobile-copy-${index + 1}`} /></header>
+                <p>{template.text}</p>
+              </article>
+            ))}
           </div>
+          {report.status === "found" && <Link className="secondary-button" style={{ width: "100%", marginTop: 12 }} href="/success">查看成功案例墙</Link>}
+          <aside style={{ marginTop: 14, padding: 13, color: "#315f58", background: "#eaf6f3", borderLeft: "3px solid var(--teal)", borderRadius: 6 }}>
+            <strong style={{ display: "block", marginBottom: 5, fontSize: 13 }}>想长期帮忙扩散寻宠信息？</strong>
+            <p style={{ margin: "0 0 11px", fontSize: 11, lineHeight: 1.65 }}>生成你的专属分享链接，成为鲸伴寻宠传播员。</p>
+            <Link className="secondary-button" style={{ width: "100%" }} href="/invite">生成我的分享链接</Link>
+          </aside>
         </section>
 
         <section className="identity-section">
@@ -221,20 +266,6 @@ ${detailUrl}`,
             <p>{publicSpreadCopy}</p>
           </article>
           <CopyLostTextButton text={publicSpreadCopy} />
-        </section>
-
-        <section className="identity-section" id="share-templates" style={{ scrollMarginTop: 78 }}>
-          <h2>选择适合的平台扩散</h2>
-          <p>你可以按不同平台复制不同版本，发到微信群、小红书或朋友圈，帮助宠物主获得更多线索。</p>
-          <div className="copy-list" style={{ marginTop: 16 }}>
-            {platformSpreadTemplates.map((template) => (
-              <article className="copy-item" key={template.title}>
-                <header><strong>{template.title}</strong></header>
-                <p>{template.text}</p>
-                <CopyLostTextButton text={template.text} label="复制该版本" successMessage="已复制，可粘贴发布。" />
-              </article>
-            ))}
-          </div>
         </section>
 
         <BasicSpreadOffer />

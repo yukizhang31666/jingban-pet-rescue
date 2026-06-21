@@ -9,7 +9,7 @@ import { apiUrl } from "@/lib/api-url";
 const provinces = ["北京市", "上海市", "广东省", "浙江省", "四川省", "湖北省", "江苏省", "重庆市", "陕西省"];
 const cities = ["北京", "上海", "广州", "深圳", "杭州", "成都", "武汉", "南京", "重庆", "西安", "苏州"];
 
-export function LostForm({ linkedPet }: { linkedPet?: { publicId: string; name: string } }) {
+export function LostForm({ linkedPet, referralCode = "" }: { linkedPet?: { publicId: string; name: string }; referralCode?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -32,6 +32,7 @@ export function LostForm({ linkedPet }: { linkedPet?: { publicId: string; name: 
         }
       }}
     >
+      <input type="hidden" name="referralCode" value={referralCode} />
       {linkedPet && <div className="linked-pet-note"><span>已关联 Pet ID</span><strong>{linkedPet.name} · {linkedPet.publicId}</strong><input type="hidden" name="petId" value={linkedPet.publicId} /></div>}
       <PhotoUploader label="上传宠物近期照片" />
       <div className="field-group">

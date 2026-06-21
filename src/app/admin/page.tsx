@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, House, Megaphone, MessageSquareText, Plus, Search } from "lucide-react";
+import { CheckCircle2, ExternalLink, House, Megaphone, MessageSquareText, Plus, Search, Share2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { getDb } from "@/lib/db";
+import { formatDateTime, formatLocation } from "@/lib/format";
 import { platformContact } from "@/lib/site-config";
+import { GrowthDashboard, type CityGrowthRow, type SourceGrowthRow } from "./growth-dashboard";
+import { LostReportStatusActions } from "./lost-report-status-actions";
 
 export const metadata: Metadata = { title: "后台管理中心" };
 export const dynamic = "force-dynamic";
@@ -16,12 +19,28 @@ type Overview = {
   inquiry_count: number | string;
   new_inquiry_count: number | string;
   converted_inquiry_count: number | string;
+  referred_lost_count: number | string;
+  found_count: number | string;
 };
 
 type RecentLead = {
   id: number;
   seen_location: string;
   status: string | null;
+  created_at: string;
+};
+
+type RecentLostReport = {
+  public_id: string;
+  pet_name: string;
+  city: string;
+  lost_location: string;
+  status: string;
+};
+
+type RecentReferredLostReport = RecentLostReport & {
+  province: string | null;
+  referral_code: string;
   created_at: string;
 };
 
@@ -32,9 +51,16 @@ const statusLabels: Record<string, string> = {
   invalid: "无效线索",
 };
 
+const lostStatusLabels: Record<string, string> = {
+  searching: "寻找中",
+  lead: "疑似有线索",
+  found: "已找回",
+  closed: "已关闭",
+};
+
 export default async function AdminHomePage() {
   const db = getDb();
-  const [overview, recentLeads] = await Promise.all([
+  const [overview, recentLeads, recentLostReports, recentReferredLostReports, sourceGrowth, cityGrowth] = await Promise.all([
     db.prepare(`
       SELECT
         (SELECT COUNT(*) FROM lost_reports) AS lost_count,
@@ -43,12 +69,53 @@ export default async function AdminHomePage() {
         (SELECT COUNT(*) FROM lost_leads WHERE status = 'resolved') AS resolved_lead_count,
         (SELECT COUNT(*) FROM spread_inquiries) AS inquiry_count,
         (SELECT COUNT(*) FROM spread_inquiries WHERE COALESCE(status, 'new') = 'new') AS new_inquiry_count,
-        (SELECT COUNT(*) FROM spread_inquiries WHERE status = 'converted') AS converted_inquiry_count
+        (SELECT COUNT(*) FROM spread_inquiries WHERE status = 'converted') AS converted_inquiry_count,
+        (SELECT COUNT(*) FROM lost_reports WHERE TRIM(COALESCE(referral_code, '')) <> '') AS referred_lost_count,
+        (SELECT COUNT(*) FROM lost_reports WHERE status = 'found') AS found_count
     `).get<Overview>(),
     db.prepare(`
       SELECT id, seen_location, status, created_at
       FROM lost_leads ORDER BY created_at DESC LIMIT 5
     `).all<RecentLead>(),
+    db.prepare(`
+      SELECT public_id, pet_name, city, lost_location, status
+      FROM lost_reports ORDER BY created_at DESC LIMIT 10
+    `).all<RecentLostReport>(),
+    db.prepare(`
+      SELECT public_id, pet_name, province, city, lost_location, status, referral_code, created_at
+      FROM lost_reports
+      WHERE TRIM(COALESCE(referral_code, '')) <> ''
+      ORDER BY created_at DESC LIMIT 10
+    `).all<RecentReferredLostReport>(),
+    db.prepare(`
+      SELECT
+        TRIM(lr.referral_code) AS referral_code,
+        COUNT(DISTINCT lr.public_id) AS publish_count,
+        COUNT(ll.id) AS lead_count,
+        COUNT(DISTINCT CASE WHEN lr.status = 'found' THEN lr.public_id END) AS found_count,
+        MAX(lr.created_at) AS latest_created_at
+      FROM lost_reports lr
+      LEFT JOIN lost_leads ll ON ll.lost_report_id = lr.public_id
+      WHERE TRIM(COALESCE(lr.referral_code, '')) <> ''
+      GROUP BY TRIM(lr.referral_code)
+      ORDER BY publish_count DESC, lead_count DESC, latest_created_at DESC
+      LIMIT 10
+    `).all<SourceGrowthRow>(),
+    db.prepare(`
+      SELECT
+        TRIM(lr.city) AS city,
+        COUNT(DISTINCT lr.public_id) AS publish_count,
+        COUNT(ll.id) AS lead_count,
+        COUNT(DISTINCT CASE WHEN lr.status = 'found' THEN lr.public_id END) AS found_count,
+        COUNT(DISTINCT CASE WHEN COALESCE(lr.status, 'searching') = 'searching' THEN lr.public_id END) AS searching_count,
+        MAX(lr.created_at) AS latest_created_at
+      FROM lost_reports lr
+      LEFT JOIN lost_leads ll ON ll.lost_report_id = lr.public_id
+      WHERE TRIM(COALESCE(lr.city, '')) <> ''
+      GROUP BY TRIM(lr.city)
+      ORDER BY publish_count DESC, lead_count DESC, latest_created_at DESC
+      LIMIT 10
+    `).all<CityGrowthRow>(),
   ]);
   const stats = [
     { label: "寻宠信息总数", value: Number(overview?.lost_count || 0), icon: Search, tone: "coral" },
@@ -58,6 +125,7 @@ export default async function AdminHomePage() {
     { label: "扩散服务咨询总数", value: Number(overview?.inquiry_count || 0), icon: Megaphone, tone: "blue" },
     { label: "新咨询数量", value: Number(overview?.new_inquiry_count || 0), icon: Megaphone, tone: "yellow" },
     { label: "已成交咨询数量", value: Number(overview?.converted_inquiry_count || 0), icon: CheckCircle2, tone: "green" },
+    { label: "有来源发布数", value: Number(overview?.referred_lost_count || 0), icon: Share2, tone: "teal" },
   ];
   const entries = [
     { title: "线索管理", description: "查看和处理爱心人士提交的线索", href: "/admin/leads", icon: MessageSquareText },
@@ -97,6 +165,18 @@ export default async function AdminHomePage() {
           })}
         </section>
 
+        <GrowthDashboard
+          metrics={{
+            lostCount: Number(overview?.lost_count || 0),
+            referredLostCount: Number(overview?.referred_lost_count || 0),
+            leadCount: Number(overview?.lead_count || 0),
+            foundCount: Number(overview?.found_count || 0),
+            inquiryCount: Number(overview?.inquiry_count || 0),
+          }}
+          sourceRows={sourceGrowth}
+          cityRows={cityGrowth}
+        />
+
         <div className="admin-section-title"><h2>快捷入口</h2></div>
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           {entries.map((entry) => {
@@ -127,6 +207,56 @@ export default async function AdminHomePage() {
             </div>
           ) : (
             <div className="admin-empty">当前还没有用户提交线索。</div>
+          )}
+        </section>
+
+        <section className="admin-section">
+          <header>
+            <div>
+              <h2>最近邀请来源发布</h2>
+              <p style={{ margin: "5px 0 0", color: "var(--muted)", fontSize: 12, lineHeight: 1.6 }}>用户通过带 ref 的链接发布寻宠信息后，会在这里显示来源，方便判断哪些传播链接有效。</p>
+            </div>
+            <span>{recentReferredLostReports.length} 条</span>
+          </header>
+          {recentReferredLostReports.length > 0 ? (
+            <div style={{ display: "grid", gap: 1, background: "var(--line)" }}>
+              {recentReferredLostReports.map((report) => (
+                <article style={{ padding: 14, background: "#fff" }} key={report.public_id}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 7, color: "#4c5961", fontSize: 12, lineHeight: 1.6 }}>
+                    <strong style={{ color: "var(--ink)", fontSize: 14 }}>{report.pet_name?.trim() || "宠物"}</strong>
+                    <span style={{ color: "var(--teal)", fontWeight: 800 }}>{lostStatusLabels[report.status] || "寻找中"}</span>
+                    <span>城市或位置：{formatLocation(report)}</span>
+                    <span style={{ color: "var(--coral)", fontWeight: 800 }}>来源：{report.referral_code.trim()}</span>
+                    <span>走失地点：{formatLocation({ lost_location: report.lost_location })}</span>
+                    <span>发布时间：{formatDateTime(report.created_at)}</span>
+                    <Link href={`/lost/${report.public_id}`} target="_blank" style={{ color: "var(--teal)", fontWeight: 800 }}>查看详情</Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="admin-empty">暂无邀请来源数据。用户通过 /lost/new?ref=xxx 发布后，这里会显示来源。</div>
+          )}
+        </section>
+
+        <section className="admin-section">
+          <header><h2>最近寻宠状态管理</h2><span>{recentLostReports.length} 条</span></header>
+          {recentLostReports.length > 0 ? (
+            <div style={{ display: "grid", gap: 1, background: "var(--line)" }}>
+              {recentLostReports.map((report) => (
+                <article style={{ padding: 14, background: "#fff" }} key={report.public_id}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 7, color: "#4c5961", fontSize: 12, lineHeight: 1.6 }}>
+                    <strong style={{ color: "var(--ink)", fontSize: 14 }}>{report.pet_name}</strong>
+                    <span style={{ color: "var(--teal)", fontWeight: 800 }}>{lostStatusLabels[report.status] || "寻找中"}</span>
+                    <span>{report.city || "城市未填写"} · {report.lost_location}</span>
+                    <Link href={`/lost/${report.public_id}`} target="_blank" style={{ color: "var(--teal)", fontWeight: 800 }}>查看详情</Link>
+                  </div>
+                  <LostReportStatusActions id={report.public_id} initialStatus={report.status || "searching"} />
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="admin-empty">当前还没有寻宠信息。</div>
           )}
         </section>
       </main>

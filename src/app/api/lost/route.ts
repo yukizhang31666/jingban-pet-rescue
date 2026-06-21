@@ -27,6 +27,8 @@ export async function POST(request: Request) {
     const rewardText = typeof form.get("reward") === "string" ? String(form.get("reward")) : "0";
     const reward = Math.max(0, Number.parseInt(rewardText, 10) || 0);
     const requestedPetId = typeof form.get("petId") === "string" ? String(form.get("petId")).trim() : "";
+    const referralCandidate = typeof form.get("referralCode") === "string" ? String(form.get("referralCode")).trim().slice(0, 50) : "";
+    const referralCode = /^[A-Za-z0-9_-]+$/.test(referralCandidate) ? referralCandidate : null;
     const photo = form.get("photo");
     if (!(photo instanceof File) || photo.size === 0) throw new Error("请上传宠物照片");
 
@@ -55,9 +57,9 @@ export async function POST(request: Request) {
     }
     await db.prepare(`
       INSERT INTO lost_reports
-      (public_id, user_id, pet_name, photo_url, province, city, lost_location, last_seen_location, lost_time, urgency, contact, contact_public, features, reward, wearing_items, temperament, pet_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(publicId, user.id, petName, photoUrl, province, city, lostLocation, lastSeenLocation, lostTime, urgency, contact, 0, features, reward, wearingItems.join("、"), temperament, petId);
+      (public_id, user_id, pet_name, photo_url, province, city, lost_location, last_seen_location, lost_time, urgency, contact, contact_public, features, reward, wearing_items, temperament, pet_id, referral_code)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(publicId, user.id, petName, photoUrl, province, city, lostLocation, lastSeenLocation, lostTime, urgency, contact, 0, features, reward, wearingItems.join("、"), temperament, petId, referralCode);
     await recordGrowthEvent(db, petId, "lost_created", "lost-tool", "", { lostId: publicId });
 
     return NextResponse.json({ publicId, petId, url: `/lost/${publicId}` }, { status: 201 });

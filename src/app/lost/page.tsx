@@ -3,30 +3,28 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarClock, MapPin, Megaphone, Plus, Radio } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
+import { cities } from "@/lib/cities";
 import { getDb, type LostRow } from "@/lib/db";
+import { formatDateTime, formatLocation } from "@/lib/format";
 
 export const metadata: Metadata = {
-  title: "全国寻宠信息",
-  description: "汇总全国宠物主发布的走失信息，爱心人士可按城市查看并提供线索。",
+  title: "全国寻宠信息｜宠物走失发布与扩散 - 鲸伴",
+  description: "在鲸伴查看全国正在寻找的猫狗和宠物走失信息，也可以免费发布寻宠启事，生成扩散文案并收集线索。",
 };
 export const dynamic = "force-dynamic";
 
 const cityFilters = [
   { name: "全国", slug: "" },
-  { name: "北京", slug: "beijing" },
-  { name: "上海", slug: "shanghai" },
-  { name: "广州", slug: "guangzhou" },
-  { name: "深圳", slug: "shenzhen" },
-  { name: "杭州", slug: "hangzhou" },
-  { name: "成都", slug: "chengdu" },
-  { name: "武汉", slug: "wuhan" },
-  { name: "南京", slug: "nanjing" },
-  { name: "重庆", slug: "chongqing" },
-  { name: "西安", slug: "xian" },
-  { name: "苏州", slug: "suzhou" },
+  ...cities,
 ];
 
 const citySlugMap = Object.fromEntries(cityFilters.filter((city) => city.slug).map((city) => [city.slug, city.name]));
+const reportStatusLabels: Record<string, string> = {
+  searching: "寻找中",
+  lead: "疑似有线索",
+  found: "已找回",
+  closed: "已关闭",
+};
 
 export default async function LostNetworkPage({ searchParams }: { searchParams: Promise<{ city?: string | string[] }> }) {
   const params = await searchParams;
@@ -34,11 +32,11 @@ export default async function LostNetworkPage({ searchParams }: { searchParams: 
   const selectedCity = citySlugMap[citySlug];
   const reports = selectedCity
     ? await getDb().prepare(`
-        SELECT * FROM lost_reports WHERE status = '寻找中' AND city = ?
+        SELECT * FROM lost_reports WHERE city = ?
         ORDER BY created_at DESC LIMIT 50
       `).all<LostRow>(selectedCity)
     : await getDb().prepare(`
-        SELECT * FROM lost_reports WHERE status = '寻找中'
+        SELECT * FROM lost_reports
         ORDER BY created_at DESC LIMIT 50
       `).all<LostRow>();
 
@@ -51,6 +49,13 @@ export default async function LostNetworkPage({ searchParams }: { searchParams: 
           <p>汇总全国宠物主发布的走失信息，爱心人士可按城市查看并提供线索。</p>
           <Link className="primary-button" href="/lost/new"><Plus size={18} /> 发布寻宠信息</Link>
         </header>
+
+        <section style={{ padding: "14px 14px 4px", background: "#fff" }}>
+          <strong style={{ display: "block", marginBottom: 9, fontSize: 12 }}>进入城市频道</strong>
+          <nav style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 10 }} aria-label="城市寻宠频道">
+            {cities.map((city) => <Link className="lost-city-filter" href={`/city/${city.slug}`} key={city.slug}>{city.name}</Link>)}
+          </nav>
+        </section>
 
         <nav className="lost-city-filters" aria-label="按城市筛选寻宠信息">
           {cityFilters.map((city) => (
@@ -66,7 +71,7 @@ export default async function LostNetworkPage({ searchParams }: { searchParams: 
 
         <section className="lost-network-section">
           <div className="section-heading compact">
-            <div><span>{selectedCity || "全国"}</span><h2>{reports.length} 条寻找中的信息</h2></div>
+            <div><span>{selectedCity || "全国"}</span><h2>{reports.length} 条寻宠信息</h2></div>
             <Megaphone size={22} />
           </div>
           {reports.length > 0 ? (
@@ -75,11 +80,11 @@ export default async function LostNetworkPage({ searchParams }: { searchParams: 
                 <article className="lost-network-card" key={report.public_id}>
                   <Link className="lost-network-photo" href={`/lost/${report.public_id}`} aria-label={`查看${report.pet_name}的寻宠详情`}><Image src={report.photo_url} alt={`${report.pet_name}的寻宠照片`} fill sizes="128px" /></Link>
                   <div className="lost-network-copy">
-                    <small className={`urgency-label urgency-${report.urgency}`}>{report.urgency} · {report.status}</small>
+                    <small className={`urgency-label urgency-${report.urgency}`}>{report.urgency} · {reportStatusLabels[report.status] || "寻找中"}</small>
                     <strong>{report.pet_name}</strong>
-                    <span className="lost-network-region"><MapPin size={14} /> {[report.province, report.city].filter(Boolean).join(" · ") || "地区待补充"}</span>
-                    <span><MapPin size={14} /> {report.lost_location}</span>
-                    <span><CalendarClock size={14} /> {report.lost_time}</span>
+                    <span className="lost-network-region"><MapPin size={14} /> {formatLocation(report)}</span>
+                    <span><MapPin size={14} /> {formatLocation({ lost_location: report.lost_location })}</span>
+                    <span><CalendarClock size={14} /> {formatDateTime(report.lost_time)}</span>
                     <p>{report.features}</p>
                     <Link className="lost-network-detail-button" href={`/lost/${report.public_id}`}>查看详情</Link>
                   </div>

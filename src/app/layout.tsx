@@ -1,17 +1,25 @@
 import type { Metadata, Viewport } from "next";
 import { ReferralCapture } from "@/components/referral-capture";
+import { siteConfig } from "@/lib/site-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "鲸伴科技 | 宠物数字身份", template: "%s | 鲸伴科技" },
-  description: "为宠物建立数字身份，快速生成宠物身份证、寻宠启事和趣味人格报告。",
-  metadataBase: new URL(process.env.API_URL || "https://jingbantech.com"),
+  title: siteConfig.defaultTitle,
+  description: siteConfig.defaultDescription,
+  metadataBase: new URL(siteConfig.url),
+  keywords: ["宠物走失", "寻宠", "找猫", "找狗", "宠物安全护照", "宠物数字档案", "城市寻宠", "深圳寻宠", "猫丢了怎么办", "狗丢了怎么办"],
   openGraph: {
-    title: "鲸伴科技 · 宠物数字身份",
-    description: "让每一份陪伴，都有迹可循。",
-    siteName: "鲸伴科技",
+    title: siteConfig.defaultTitle,
+    description: siteConfig.defaultDescription,
+    siteName: siteConfig.name,
+    url: `${siteConfig.url}/`,
     locale: "zh_CN",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.defaultTitle,
+    description: siteConfig.defaultDescription,
   },
 };
 

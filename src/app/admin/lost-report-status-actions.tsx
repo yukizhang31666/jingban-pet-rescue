@@ -1,0 +1,56 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { apiUrl } from "@/lib/api-url";
+
+const statusOptions = [
+  { value: "searching", label: "标记寻找中" },
+  { value: "lead", label: "标记疑似有线索" },
+  { value: "found", label: "标记已找回" },
+  { value: "closed", label: "标记已关闭" },
+];
+
+export function LostReportStatusActions({ id, initialStatus }: { id: string; initialStatus: string }) {
+  const router = useRouter();
+  const [status, setStatus] = useState(initialStatus || "searching");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function updateStatus(nextStatus: string) {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(apiUrl(`/api/admin/lost/${id}/status`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!response.ok) throw new Error("更新失败");
+      setStatus(nextStatus);
+      router.refresh();
+    } catch {
+      setError("状态更新失败，请稍后重试。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 8 }}>
+      {statusOptions.map((option) => (
+        <button
+          className={status === option.value ? "primary-button" : "secondary-button"}
+          style={{ minHeight: 36, padding: "0 11px", fontSize: 11 }}
+          type="button"
+          disabled={busy || status === option.value}
+          onClick={() => updateStatus(option.value)}
+          key={option.value}
+        >
+          {option.label}
+        </button>
+      ))}
+      {error && <p className="form-error" style={{ width: "100%", textAlign: "left" }} role="alert">{error}</p>}
+    </div>
+  );
+}

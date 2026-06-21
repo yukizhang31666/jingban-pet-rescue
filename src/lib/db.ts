@@ -103,7 +103,8 @@ async function createSchema() {
       wearing_items TEXT NOT NULL DEFAULT '',
       temperament TEXT NOT NULL DEFAULT '',
       pet_id TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT '寻找中',
+      status TEXT NOT NULL DEFAULT 'searching',
+      referral_code TEXT,
       views INTEGER NOT NULL DEFAULT 0,
       share_count INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (to_char(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai', 'YYYY-MM-DD HH24:MI:SS'))
@@ -111,6 +112,16 @@ async function createSchema() {
 
     ALTER TABLE lost_reports ADD COLUMN IF NOT EXISTS province TEXT NOT NULL DEFAULT '';
     ALTER TABLE lost_reports ADD COLUMN IF NOT EXISTS city TEXT NOT NULL DEFAULT '';
+    ALTER TABLE lost_reports ADD COLUMN IF NOT EXISTS referral_code TEXT;
+    ALTER TABLE lost_reports ALTER COLUMN status SET DEFAULT 'searching';
+    UPDATE lost_reports SET status = CASE status
+      WHEN '寻找中' THEN 'searching'
+      WHEN '疑似有线索' THEN 'lead'
+      WHEN '已找回' THEN 'found'
+      WHEN '已关闭' THEN 'closed'
+      WHEN '' THEN 'searching'
+      ELSE status
+    END;
 
     CREATE TABLE IF NOT EXISTS personality_tests (
       id BIGSERIAL PRIMARY KEY,
@@ -384,7 +395,8 @@ export type LostRow = {
   id: number; public_id: string; pet_name: string; photo_url: string; lost_location: string; lost_time: string;
   province?: string; city?: string;
   contact: string; features: string; reward: number; urgency: string; last_seen_location: string; contact_public: number;
-  wearing_items: string; temperament: string; pet_id: string; status: string; views: number; share_count: number; created_at: string;
+  wearing_items: string; temperament: string; pet_id: string; status: string; referral_code?: string | null;
+  views: number; share_count: number; created_at: string;
 };
 
 export type QuizRow = {
