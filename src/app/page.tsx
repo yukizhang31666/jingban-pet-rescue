@@ -70,8 +70,8 @@ export default async function Home() {
         />
         <div className="hero-copy">
           <span className="hero-kicker"><ShieldCheck size={15} /> 宠物安全护照 · 一键寻宠 · 城市协作</span>
-          <h1>给宠物一张安全护照，<br />走失时一键生成寻宠页</h1>
-          <p>免费建立宠物安全档案，生成可转发身份卡。关键时刻，可快速发布寻宠信息、生成扩散文案并收集线索。</p>
+          <h1>鲸伴科技｜全国宠物走失互助与公益服务平台</h1>
+          <p><strong>给宠物一张安全护照，走失时一键生成寻宠页。</strong><br />免费建立宠物安全档案，生成可转发身份卡。关键时刻，可快速发布寻宠信息、生成扩散文案并收集线索。</p>
           <div className="hero-actions">
             <Link className="hero-button" href="/pet-id/new">免费生成安全护照 <ArrowRight size={18} /></Link>
             <Link className="hero-secondary-button" href="/lost/new"><Search size={17} /> 发布寻宠信息</Link>
@@ -81,7 +81,8 @@ export default async function Home() {
       </section>
 
       <section style={{ margin: 0, padding: "13px 20px", color: "#46535c", background: "#f7faf9", borderBottom: "1px solid var(--line)", fontSize: 11, lineHeight: 1.7 }} aria-label="鲸伴平台介绍">
-        <p style={{ margin: "0 0 5px" }}>鲸伴是宠物安全护照与城市寻宠协作平台。宠物主可以免费建立宠物安全档案；宠物走失时，可以快速发布寻宠信息、生成扩散文案并收集线索。</p>
+        <p style={{ margin: "0 0 5px" }}>鲸伴科技是面向全国的宠物互助平台，围绕宠物走失、寻宠互助和城市宠物公益，为宠物主提供安全档案、信息扩散与线索收集工具。</p>
+        <p style={{ margin: "0 0 5px" }}>平台同时连接深圳宠物服务及其他城市的本地资源，让宠物训练、宠物摄影、宠物寄养等可信赖服务更容易被看见。</p>
         <p style={{ margin: 0 }}>鲸伴正在建设全国城市寻宠网络。宠物安全护照不是法定证件，平台不对找回结果作出承诺，也不提供动物诊疗或线下搜寻，仅提供信息整理、传播协作和线索收集工具。</p>
       </section>
 

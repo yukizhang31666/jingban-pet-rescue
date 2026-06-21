@@ -4,7 +4,7 @@ import { siteConfig } from "@/lib/site-config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
-  const coreRoutes = ["", "/lost", "/lost/new", "/success", "/invite", "/guide", "/guide/cat-lost", "/guide/dog-lost", "/guide/pet-lost", "/templates", "/cases", "/search-intent", "/search-intent/cat-lost-nearby", "/search-intent/dog-lost-nearby", "/search-intent/pet-lost-post", "/search-intent/lost-pet-notice"];
+  const coreRoutes = ["", "/lost", "/lost/new", "/success", "/invite", "/services", "/guide", "/guide/cat-lost", "/guide/dog-lost", "/guide/pet-lost", "/templates", "/cases", "/search-intent", "/search-intent/cat-lost-nearby", "/search-intent/dog-lost-nearby", "/search-intent/pet-lost-post", "/search-intent/lost-pet-notice"];
   return [
     ...coreRoutes.map((path) => ({
       url: path ? `${siteConfig.url}${path}` : `${siteConfig.url}/`,
