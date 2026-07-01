@@ -30,13 +30,22 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 dev-server*.log
+*.log
+localtunnel*.log
+growth-tunnel*.log
+tunnel*.log
 
 # local MVP data and user uploads
 /data/*.sqlite*
 /public/uploads/
 
 # env files (can opt-in for committing if needed)
+.env
 .env*
+.env.local
+.env.development
+.env.production
+.env*.local
 !.env.example
 
 # vercel
@@ -45,6 +54,3 @@ dev-server*.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-.vercel
-.env*
