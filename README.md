@@ -53,6 +53,8 @@ Vercel 生产环境至少需要配置：
 
 ## 命令
 
+本项目统一使用 pnpm，请不要混用 npm/yarn，以避免锁文件不一致。
+
 ```bash
 pnpm install
 pnpm lint
