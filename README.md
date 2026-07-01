@@ -28,14 +28,28 @@
 
 ## 环境变量
 
-复制 `.env.example` 中的字段到 Vercel Project Settings：
+复制 `.env.example` 中的字段到 Vercel Project Settings，或本地复制为 `.env.local`。真实密钥只应配置在 Vercel Environment Variables 或本地 `.env.local`，不要写入仓库。
 
-- `API_URL`：正式站点来源，例如 `https://jingbantech.com`
-- `DATABASE_URL`：托管 PostgreSQL 连接串
-- `BLOB_READ_WRITE_TOKEN`：Vercel Blob 读写令牌
-- `WECHAT_PAYMENT_QR_URL`：微信收款码图片公网地址
-- `ADMIN_PASSWORD`：后台管理员密码
-- `ADMIN_SESSION_SECRET`：至少 24 位随机字符串
+Vercel 生产环境至少需要配置：
+
+- `API_URL`
+- `DATABASE_URL`
+- `BLOB_READ_WRITE_TOKEN`
+- `ADMIN_PASSWORD`
+- `ADMIN_SESSION_SECRET`
+
+| 变量 | 用途 | 是否必填 | 是否可以公开到前端 |
+| --- | --- | --- | --- |
+| `API_URL` | 站点来源，用于分享链接、来源校验和派生前端 API 地址，例如 `https://jingbantech.com` | 是 | 可以，属于公开站点 URL |
+| `DATABASE_URL` | 托管 PostgreSQL 连接串 | 是 | 否 |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob 读写令牌，用于上传宠物和寻宠照片 | 是 | 否 |
+| `WECHAT_PAYMENT_QR_URL` | 微信收款码图片公网地址 | 否，未配置时显示占位付款提示 | 可以，图片 URL 会用于前端展示 |
+| `ADMIN_PASSWORD` | 后台管理员登录密码 | 是 | 否 |
+| `ADMIN_SESSION_SECRET` | 后台 HttpOnly session 签名密钥，至少 32 位随机字符串 | 是 | 否 |
+| `LOST_CLUE_WEBHOOK_URL` | 可选线索转发 Webhook；未配置时只进入后台线索队列 | 否 | 否 |
+| `NEXT_PUBLIC_API_URL` | 前端 API base URL，由 `next.config.ts` 从 `API_URL` 派生 | 否，一般不用手动填写 | 是 |
+| `NEXT_PUBLIC_WECHAT_PAYMENT_QR_URL` | 前端付款二维码 URL，由 `next.config.ts` 从 `WECHAT_PAYMENT_QR_URL` 派生 | 否，一般不用手动填写 | 是 |
+| `NODE_ENV` | 运行环境标识，由 Next.js / Node / Vercel 自动提供 | 否，不需要手动配置 | 不作为业务密钥 |
 
 ## 命令
 
@@ -62,7 +76,7 @@ pnpm migrate:production
 - `/quiz`：宇宙身份测试
 - `/services`：已审核本地服务商
 - `/merchant/apply`：商家入驻
-- `/admin/login`：生产后台登录
+- `/admin-login`：生产后台公开登录入口
 - `/api/health`：部署健康检查
 
 上线步骤见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
