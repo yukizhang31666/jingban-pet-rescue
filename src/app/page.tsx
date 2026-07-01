@@ -114,6 +114,7 @@ export default async function Home() {
             </Link>
           ))}
         </nav>
+        <Link className="secondary-button" href="/city" style={{ width: "100%", marginTop: 12 }}>查看全部城市寻宠入口</Link>
       </section>
 
       <section className="home-section" aria-labelledby="latest-lost-title">
