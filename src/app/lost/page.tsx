@@ -6,6 +6,7 @@ import { MobileShell } from "@/components/mobile-shell";
 import { cities } from "@/lib/cities";
 import { getDb, type LostRow } from "@/lib/db";
 import { formatDateTime, formatLocation } from "@/lib/format";
+import { createBreadcrumbJsonLd, createCollectionPageJsonLd, createFaqJsonLd, serializeJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "全国寻宠信息｜宠物走失发布与扩散 - 鲸伴",
@@ -25,6 +26,38 @@ const reportStatusLabels: Record<string, string> = {
   found: "已找回",
   closed: "已关闭",
 };
+const lostPageFaqs = [
+  {
+    question: "在鲸伴发布寻宠信息适合什么情况？",
+    answer: "适合猫、狗或其他宠物走失后，需要把照片、走失时间、地点、特征和补充说明整理成一页寻宠信息，并生成便于转发的扩散文案、持续收集线索的情况。",
+  },
+  {
+    question: "发布寻宠信息会公开手机号或微信吗？",
+    answer: "不会直接在公开页面展示手机号或微信。爱心人士提交线索时会通过平台表单中转，方便宠物主集中查看和判断，减少联系方式被直接暴露的风险。",
+  },
+  {
+    question: "鲸伴能保证找回走失宠物吗？",
+    answer: "不能保证找回。鲸伴主要帮助宠物主整理关键信息、生成扩散文案、汇总线索，并连接城市宠物互助协作；实际寻找仍需要结合线下排查、监控询问和周边沟通。",
+  },
+  {
+    question: "寻宠信息适合分享到哪些地方？",
+    answer: "可以分享给小区业主群、社区群、附近商户、宠物社群、朋友圈和城市互助渠道。分享时建议保持同一个寻宠页面作为线索入口，避免信息分散。",
+  },
+  {
+    question: "宠物找回后应该怎么处理？",
+    answer: "建议及时更新寻宠状态或关闭寻宠信息，并感谢提供线索的人。如果宠物受伤或状态异常，应尽快联系专业兽医检查。",
+  },
+];
+const collectionPageJsonLd = createCollectionPageJsonLd({
+  name: "全国宠物走失寻宠信息",
+  url: "https://jingbantech.com/lost",
+  description: "查看全国宠物走失信息，发布寻宠启事，生成扩散文案，收集线索，参与城市宠物互助协作。",
+});
+const breadcrumbJsonLd = createBreadcrumbJsonLd([
+  { name: "首页", url: "https://jingbantech.com" },
+  { name: "全国寻宠", url: "https://jingbantech.com/lost" },
+]);
+const faqJsonLd = createFaqJsonLd(lostPageFaqs);
 
 export default async function LostNetworkPage({ searchParams }: { searchParams: Promise<{ city?: string | string[] }> }) {
   const params = await searchParams;
@@ -42,6 +75,9 @@ export default async function LostNetworkPage({ searchParams }: { searchParams: 
 
   return (
     <MobileShell>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(collectionPageJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
       <div className="lost-network-page">
         <header className="lost-network-heading">
           <span><Radio size={14} /> 全国宠物公益寻回平台</span>
@@ -102,6 +138,21 @@ export default async function LostNetworkPage({ searchParams }: { searchParams: 
               </div>
             </div>
           )}
+        </section>
+
+        <section className="lost-network-section" aria-labelledby="lost-faq-title">
+          <div className="section-heading compact">
+            <div><span>常见问题</span><h2 id="lost-faq-title">寻宠信息发布 FAQ</h2></div>
+            <Megaphone size={22} />
+          </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            {lostPageFaqs.map((faq) => (
+              <article className="lost-network-card" style={{ display: "block", padding: 14 }} key={faq.question}>
+                <h3 style={{ margin: "0 0 7px", fontSize: 15 }}>{faq.question}</h3>
+                <p style={{ margin: 0, color: "var(--muted)", fontSize: 12, lineHeight: 1.7 }}>{faq.answer}</p>
+              </article>
+            ))}
+          </div>
         </section>
       </div>
     </MobileShell>
