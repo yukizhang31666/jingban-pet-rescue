@@ -15,6 +15,7 @@ import { LeadHintButton } from "./lead-hint-button";
 import { getDb, type LostRow } from "@/lib/db";
 import { formatDateTime, formatLocation } from "@/lib/format";
 import { appendConversionStage, recordGrowthEvent } from "@/lib/pet-growth";
+import { createBreadcrumbJsonLd, createFaqJsonLd, serializeJsonLd } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,28 @@ const reportStatusLabels: Record<string, string> = {
   found: "已找回",
   closed: "已关闭",
 };
+const lostDetailFaqs = [
+  {
+    question: "我看到疑似走失宠物，应该怎么提交线索？",
+    answer: "请先保持安全距离，记录看到的位置、时间、移动方向和宠物状态，再通过页面中的“我有线索”表单提交。鲸伴会帮助整理线索，并通过平台表单中转给相关宠物主或后台核对。",
+  },
+  {
+    question: "提交线索会公开我的联系方式吗？",
+    answer: "不会直接公开展示。线索提交者和宠物主的联系方式都不会直接出现在公开页面，线索会通过平台表单进入后台，再由平台或主人核对后中转。",
+  },
+  {
+    question: "鲸伴能保证找回这只宠物吗？",
+    answer: "不能保证找回。鲸伴提供寻宠信息整理、扩散文案、线索收集和城市互助工具，但实际寻找仍需要结合线下排查、周边询问、监控确认和安全判断。",
+  },
+  {
+    question: "我可以把这条寻宠信息分享到哪里？",
+    answer: "可以分享到微信群、朋友圈、小红书、社区群、小区业主群、附近商户和城市互助渠道。建议使用本页面作为统一线索入口，避免线索分散。",
+  },
+  {
+    question: "如果宠物已经找回，页面会怎么处理？",
+    answer: "宠物找回后，页面可更新为已找回或关闭状态，并保留必要的感谢和案例信息。平台不提供线下搜寻、抓捕、动物诊疗或医疗救治服务。",
+  },
+];
 
 async function findReport(id: string) {
   return await getDb().prepare("SELECT * FROM lost_reports WHERE public_id = ?").get<LostRow>(id);
@@ -52,6 +75,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       type: "article",
       url: `${siteConfig.url}/lost/${id}`,
       ...(report.photo_url ? { images: [{ url: report.photo_url, alt: `${petName}的寻宠照片` }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(report.photo_url ? { images: [report.photo_url] } : {}),
     },
   };
 }
@@ -162,10 +191,18 @@ ${detailUrl}
     url: `${siteConfig.url}/lost/${id}`,
     description: report.status === "found" ? "宠物成功找回案例页面" : "宠物走失信息与线索收集页面",
   };
+  const breadcrumbStructuredData = createBreadcrumbJsonLd([
+    { name: "首页", url: "https://jingbantech.com" },
+    { name: "全国寻宠", url: "https://jingbantech.com/lost" },
+    { name: "当前寻宠信息", url: `${siteConfig.url}/lost/${id}` },
+  ]);
+  const faqStructuredData = createFaqJsonLd(lostDetailFaqs);
 
   return (
     <MobileShell>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(pageStructuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbStructuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqStructuredData) }} />
       <article className="identity-page">
         <div className="lost-alert">
           <strong>公益寻宠信息｜正在扩散中</strong>
@@ -216,6 +253,16 @@ ${detailUrl}
           <p>请先保持安全距离，记录位置、时间和移动方向。平台不会公开主人或线索提交者的联系方式。</p>
           <LeadHintButton lostId={report.public_id} />
           <div className="private-contact"><ShieldCheck size={18} /> 线索进入鲸伴后台，由工作人员核对并中转给主人。</div>
+          <aside style={{ marginTop: 14, padding: 14, color: "#665711", background: "#fff7d6", borderLeft: "3px solid var(--yellow)", borderRadius: 6 }}>
+            <strong style={{ display: "block", marginBottom: 7, color: "#3e3420", fontSize: 13 }}>提交线索前请了解</strong>
+            <div style={{ display: "grid", gap: 6, fontSize: 11, lineHeight: 1.65 }}>
+              <p style={{ margin: 0 }}>鲸伴不会直接公开主人或线索提交者联系方式。</p>
+              <p style={{ margin: 0 }}>线索会通过平台表单进入后台，由平台或主人核对后中转。</p>
+              <p style={{ margin: 0 }}>平台提供信息整理、扩散文案和线索收集工具。</p>
+              <p style={{ margin: 0 }}>平台不承诺找回结果。</p>
+              <p style={{ margin: 0 }}>平台不提供线下搜寻、抓捕、动物诊疗或医疗救治服务。</p>
+            </div>
+          </aside>
         </section>
 
         <section className="identity-section" id="share-templates" style={{ scrollMarginTop: 78 }}>
@@ -269,6 +316,17 @@ ${detailUrl}
         </section>
 
         <BasicSpreadOffer />
+        <section className="identity-section" aria-labelledby="lost-detail-faq-title">
+          <h2 id="lost-detail-faq-title">寻宠详情常见问题</h2>
+          <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
+            {lostDetailFaqs.map((faq) => (
+              <article key={faq.question}>
+                <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>{faq.question}</h3>
+                <p style={{ margin: 0, color: "var(--muted)", fontSize: 12, lineHeight: 1.7 }}>{faq.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
       </article>
     </MobileShell>
   );
