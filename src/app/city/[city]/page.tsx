@@ -6,6 +6,7 @@ import { MobileShell } from "@/components/mobile-shell";
 import { findCity } from "@/lib/cities";
 import { getDb, type LostRow } from "@/lib/db";
 import { formatDateTime, formatLocation } from "@/lib/format";
+import { createBreadcrumbJsonLd, createCollectionPageJsonLd, createFaqJsonLd, serializeJsonLd } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
 import { CopyLostTextButton } from "@/app/lost/[id]/copy-lost-text-button";
 
@@ -53,13 +54,40 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
   const statusLabels: Record<string, string> = { searching: "寻找中", lead: "疑似有线索" };
   const cityName = city.name?.trim() || "本地";
   const cityUrl = `${siteConfig.url}/city/${city.slug}`;
-  const pageStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
+  const pageDescription = `${cityName}宠物走失发布与城市互助页面`;
+  const collectionJsonLd = createCollectionPageJsonLd({
     name: `${cityName}寻宠`,
-    url: `${siteConfig.url}/city/${city.slug}`,
-    description: `${cityName}宠物走失发布与城市互助页面`,
-  };
+    url: cityUrl,
+    description: pageDescription,
+  });
+  const breadcrumbJsonLd = createBreadcrumbJsonLd([
+    { name: "首页", url: siteConfig.url },
+    { name: "城市寻宠", url: cityUrl },
+    { name: `${cityName}寻宠`, url: cityUrl },
+  ]);
+  const cityFaqs = [
+    {
+      question: `${cityName}宠物走失后可以在鲸伴做什么？`,
+      answer: `你可以在鲸伴发布${cityName}寻宠信息，整理宠物照片、走失地点、走失时间和明显特征，生成适合转发的寻宠页面、扩散文案，并通过线索表单收集可能的目击信息。`,
+    },
+    {
+      question: `在${cityName}发布寻宠信息会公开手机号吗？`,
+      answer: "不会直接公开展示手机号。爱心人士通过平台表单提交线索，联系方式和线索会进入后台队列，由平台协助整理和中转。",
+    },
+    {
+      question: "鲸伴能保证找回走失宠物吗？",
+      answer: "不能保证找回结果。鲸伴提供信息整理、扩散文案、线索收集和城市互助工具，不提供线下搜寻、抓捕或动物诊疗服务。",
+    },
+    {
+      question: `${cityName}寻宠信息适合分享到哪里？`,
+      answer: `适合分享到${cityName}本地宠物群、业主群、朋友圈、小红书和同城互助渠道。分享时建议保留宠物照片、最后出现位置、走失时间、明显特征和寻宠详情页链接。`,
+    },
+    {
+      question: "已经找回宠物后应该怎么处理？",
+      answer: "建议及时更新寻宠状态，告知帮助转发和提交线索的朋友，并保留宠物安全档案，方便以后继续使用身份页和应急信息。",
+    },
+  ];
+  const faqJsonLd = createFaqJsonLd(cityFaqs);
   const cityShareTexts = [
     {
       title: "微信群版",
@@ -77,7 +105,9 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
 
   return (
     <MobileShell>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
       <div className="lost-network-page">
         <header className="lost-network-heading">
           <span><Radio size={14} /> 全国城市寻宠协作网络</span>
@@ -196,6 +226,23 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
                   {template.text}
                 </p>
                 <CopyLostTextButton text={template.text} label="复制该版本" successMessage="已复制，可粘贴发布。" />
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="lost-network-section" style={{ paddingTop: 0 }} aria-labelledby="city-faq-title">
+          <div className="section-heading compact">
+            <div>
+              <span>常见问题</span>
+              <h2 id="city-faq-title">{cityName}寻宠 FAQ</h2>
+            </div>
+          </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            {cityFaqs.map((faq) => (
+              <article key={faq.question} style={{ padding: 14, background: "#fff", border: "1px solid var(--line)", borderRadius: 7 }}>
+                <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>{faq.question}</h3>
+                <p style={{ margin: 0, color: "var(--muted)", fontSize: 12, lineHeight: 1.7 }}>{faq.answer}</p>
               </article>
             ))}
           </div>
