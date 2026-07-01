@@ -4,11 +4,28 @@ type LocationSource = {
   lost_location?: string | null;
 };
 
-const invalidLocationValues = new Set(["地区待补充", "undefined", "null"]);
+const invalidLocationValues = new Set([
+  "地区待补充",
+  "待补充",
+  "未填写",
+  "未提供",
+  "未知",
+  "位置暂未填写",
+  "地区未填写",
+  "地址待补充",
+  "地址未填写",
+  "undefined",
+  "null",
+  "n/a",
+  "na",
+  "-",
+  "--",
+]);
 
 function cleanLocationValue(value?: string | null) {
-  const text = value?.trim() || "";
-  return invalidLocationValues.has(text.toLowerCase()) ? "" : text;
+  const text = value?.replace(/[\s\u3000]+/g, " ").trim() || "";
+  const normalized = text.replace(/[\s\u3000]+/g, "").toLowerCase();
+  return invalidLocationValues.has(normalized) ? "" : text;
 }
 
 export function formatLocation(report: LocationSource) {
