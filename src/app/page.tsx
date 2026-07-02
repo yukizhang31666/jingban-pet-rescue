@@ -38,6 +38,40 @@ const services = [
 
 const heroBenefits = ["免费建档", "专属二维码", "联系方式默认不公开", "走失后可快速扩散"];
 const petIdPreviewItems = ["基础档案", "防丢信息", "线索中转"];
+const communityChannels = [
+  {
+    href: "/lost",
+    title: "寻宠互助",
+    description: "查看全国正在寻找的宠物，帮助主人扩散信息、提交线索。",
+    action: "查看寻宠信息",
+    icon: Search,
+    tone: "teal",
+  },
+  {
+    href: "/lost/new",
+    title: "发布寻宠",
+    description: "宠物走失后，快速生成可转发的寻宠页面和扩散文案。",
+    action: "发布寻宠启事",
+    icon: Megaphone,
+    tone: "coral",
+  },
+  {
+    href: "/city",
+    title: "城市互助",
+    description: "按城市查看本地寻宠信息、成功案例和扩散文案。",
+    action: "查看城市互助",
+    icon: MapPin,
+    tone: "teal",
+  },
+  {
+    href: "/volunteer",
+    title: "流浪线索与领养资源",
+    description: "先从志愿者协作和城市公益信息开始，后续逐步开放招领、领养和流浪动物线索频道。",
+    action: "加入互助行动",
+    icon: HeartHandshake,
+    tone: "violet",
+  },
+];
 
 export default async function Home() {
   const [latestReports, recentFoundReports] = await Promise.all([
@@ -149,6 +183,35 @@ export default async function Home() {
           ))}
         </nav>
         <Link className="secondary-button" href="/city" style={{ width: "100%", marginTop: 12 }}>查看全部城市寻宠入口</Link>
+      </section>
+
+      <section className="home-section" aria-labelledby="community-channels-title" style={{ paddingTop: 0 }}>
+        <div className="section-heading">
+          <div>
+            <span>互助频道</span>
+            <h2 id="community-channels-title">正在发生的宠物互助</h2>
+          </div>
+          <HeartHandshake size={24} />
+        </div>
+        <p style={{ margin: "-8px 0 18px", color: "var(--muted)", fontSize: 12, lineHeight: 1.65 }}>
+          从寻宠扩散、城市互助到流浪动物线索，鲸伴希望让每一条宠物信息都被更多人看见。
+        </p>
+        <div className="service-list">
+          {communityChannels.map((channel) => {
+            const Icon = channel.icon;
+            return (
+              <Link className={`service-item ${channel.tone}`} href={channel.href} key={channel.href}>
+                <span className="service-icon"><Icon size={24} /></span>
+                <span className="service-copy">
+                  <small>{channel.action}</small>
+                  <strong>{channel.title}</strong>
+                  <span>{channel.description}</span>
+                </span>
+                <ArrowRight className="service-arrow" size={20} />
+              </Link>
+            );
+          })}
+        </div>
       </section>
 
       <section className="home-section" aria-labelledby="latest-lost-title">
