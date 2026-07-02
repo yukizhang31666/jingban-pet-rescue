@@ -36,6 +36,9 @@ const services = [
   },
 ];
 
+const heroBenefits = ["免费建档", "专属二维码", "联系方式默认不公开", "走失后可快速扩散"];
+const petIdPreviewItems = ["基础档案", "防丢信息", "线索中转"];
+
 export default async function Home() {
   const [latestReports, recentFoundReports] = await Promise.all([
     getDb().prepare(`
@@ -68,14 +71,45 @@ export default async function Home() {
           priority
           sizes="(max-width: 560px) 100vw, 520px"
         />
-        <div className="hero-copy">
+        <div className="hero-copy" style={{ width: "min(86%, 430px)" }}>
           <span className="hero-kicker"><ShieldCheck size={15} /> 宠物安全护照 · 一键寻宠 · 城市协作</span>
-          <h1>鲸伴科技｜全国宠物走失互助与公益服务平台</h1>
-          <p><strong>给宠物一张安全护照，走失时一键生成寻宠页。</strong><br />免费建立宠物安全档案，生成可转发身份卡。关键时刻，可快速发布寻宠信息、生成扩散文案并收集线索。</p>
+          <h1 style={{ maxWidth: 400 }}>免费生成宠物身份证，走失时一键寻宠</h1>
+          <p>给猫狗建立一张可扫码的数字身份卡。宠物走失时，发现者打开二维码页面，就能查看基础信息，并通过平台线索表单联系主人。</p>
           <div className="hero-actions">
-            <Link className="hero-button" href="/pet-id/new">免费生成安全护照 <ArrowRight size={18} /></Link>
+            <Link className="hero-button" href="/pet-id/new">免费办理宠物身份证 <ArrowRight size={18} /></Link>
             <Link className="hero-secondary-button" href="/lost/new"><Search size={17} /> 发布寻宠信息</Link>
-            <Link className="hero-secondary-button" style={{ gridColumn: "1 / -1" }} href="/lost"><MapPin size={17} /> 查看本城走失宠物</Link>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 7, marginTop: 12, maxWidth: 360 }}>
+            {heroBenefits.map((benefit) => (
+              <span key={benefit} style={{ display: "inline-flex", alignItems: "center", gap: 5, minHeight: 28, color: "#315f5b", background: "rgba(255, 255, 255, 0.82)", border: "1px solid rgba(23, 33, 43, 0.1)", borderRadius: 7, padding: "0 8px", fontSize: 11, fontWeight: 800 }}>
+                <CheckCircle2 size={13} />
+                {benefit}
+              </span>
+            ))}
+          </div>
+          <Link href="/lost" style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 10, color: "var(--teal-dark)", fontSize: 12, fontWeight: 800 }}>
+            查看正在寻找的宠物 <ArrowRight size={14} />
+          </Link>
+          <div style={{ width: "min(100%, 340px)", marginTop: 14, padding: 14, color: "#1f2b32", background: "rgba(255, 255, 255, 0.93)", border: "1px solid rgba(23, 33, 43, 0.12)", borderRadius: 8, boxShadow: "0 12px 30px rgba(23, 33, 43, 0.12)" }} aria-label="宠物身份证预览卡">
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+              <div>
+                <span style={{ color: "var(--teal)", fontSize: 10, fontWeight: 850 }}>宠物身份证预览</span>
+                <strong style={{ display: "block", marginTop: 4, fontSize: 18 }}>宠物名：小鲸</strong>
+                <span style={{ display: "block", marginTop: 5, color: "#5b6870", fontSize: 11 }}>Pet ID：JB-2026-XXXX</span>
+                <span style={{ display: "inline-flex", marginTop: 8, padding: "4px 7px", color: "var(--teal-dark)", background: "#eaf6f3", borderRadius: 6, fontSize: 10, fontWeight: 850 }}>已生成数字身份</span>
+              </div>
+              <div style={{ width: 74, height: 74, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4, flex: "0 0 auto", padding: 7, background: "#f7faf9", border: "1px solid var(--line)", borderRadius: 7 }} aria-hidden="true">
+                {Array.from({ length: 16 }).map((_, index) => (
+                  <span key={index} style={{ background: index % 3 === 0 || index === 5 || index === 10 ? "#174f4c" : "#dfe9e6", borderRadius: 2 }} />
+                ))}
+              </div>
+            </div>
+            <p style={{ margin: "10px 0 0", color: "#46535c", fontSize: 11, lineHeight: 1.55 }}>扫码查看宠物身份卡</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 10 }}>
+              {petIdPreviewItems.map((item) => (
+                <span key={item} style={{ minHeight: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#46535c", background: "#f7faf9", border: "1px solid var(--line)", borderRadius: 6, fontSize: 10, fontWeight: 800 }}>{item}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
