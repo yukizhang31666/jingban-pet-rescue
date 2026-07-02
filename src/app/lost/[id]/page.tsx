@@ -7,7 +7,6 @@ import { CopyButton } from "@/components/copy-button";
 import { LostSpreadStatus } from "@/components/lost-spread-status";
 import { MobileShell } from "@/components/mobile-shell";
 import { PosterActions } from "@/components/poster-actions";
-import { ProductOffer } from "@/components/product-offer";
 import { QrCode } from "@/components/qr-code";
 import { BasicSpreadOffer } from "./basic-spread-offer";
 import { CopyLostTextButton } from "./copy-lost-text-button";
@@ -291,16 +290,6 @@ ${detailUrl}
 
         <PosterActions kind="lost" publicId={report.public_id} title={`${report.urgency}寻找 ${report.pet_name}`} subtitle="请帮忙留意并转发" photoUrl={report.photo_url} lines={posterLines} />
 
-        <ProductOffer
-          title="紧急寻宠扩散包"
-          price="¥99"
-          buttonLabel="紧急寻宠扩散包｜¥99"
-          benefits={["朋友圈寻宠海报", "微信群求助文案", "小红书寻宠文案", "抖音口播文案", "同城扩散发布建议"]}
-          productType="lost_spread_package"
-          targetType="lost"
-          targetId={report.public_id}
-          tone="coral"
-        />
         {report.pet_id && <section className="identity-section result-next-actions"><Link className="secondary-button" href={`/pet/${report.pet_id}`}>返回 {report.pet_name} 的 Pet ID 增长主页</Link></section>}
 
         <section className="identity-section">

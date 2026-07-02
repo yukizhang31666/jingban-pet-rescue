@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, BadgeCheck, BookHeart, CalendarClock, CheckCircle2, HeartHandshake, MapPin, Megaphone, QrCode, Radio, ScanLine, Search, ShieldCheck, Sparkles, Store } from "lucide-react";
+import { AlertTriangle, ArrowRight, BadgeCheck, BookHeart, CalendarClock, CheckCircle2, HeartHandshake, MapPin, Megaphone, MessageSquare, QrCode, Radio, ScanLine, Search, ShieldCheck, Sparkles, Store } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
 import { cities } from "@/lib/cities";
 import { getDb, type LostRow } from "@/lib/db";
@@ -70,6 +70,32 @@ const communityChannels = [
     action: "加入互助行动",
     icon: HeartHandshake,
     tone: "violet",
+  },
+];
+const selfServeSpreadTools = [
+  {
+    title: "生成寻宠页面",
+    description: "把宠物照片、走失地点、时间和特征整理成一个可转发页面。",
+    icon: Search,
+    color: "var(--teal)",
+  },
+  {
+    title: "复制扩散文案",
+    description: "自动整理适合微信群、朋友圈、小红书使用的寻宠文案。",
+    icon: BookHeart,
+    color: "var(--coral)",
+  },
+  {
+    title: "收集线索",
+    description: "看到疑似宠物的人可以通过平台表单提交位置、时间和描述。",
+    icon: MessageSquare,
+    color: "var(--violet)",
+  },
+  {
+    title: "状态更新",
+    description: "宠物找到后可更新为已找回，让关心的人知道结果。",
+    icon: CheckCircle2,
+    color: "var(--teal)",
   },
 ];
 
@@ -331,31 +357,34 @@ export default async function Home() {
       <section className="home-section" aria-labelledby="spread-service-title" style={{ paddingTop: 0 }}>
         <div className="section-heading">
           <div>
-            <span>按紧急程度选择</span>
-            <h2 id="spread-service-title">寻宠扩散协助服务</h2>
+            <span>免费自助工具</span>
+            <h2 id="spread-service-title">自助扩散工具</h2>
           </div>
           <Megaphone size={24} />
         </div>
+        <p style={{ margin: "-8px 0 18px", color: "var(--muted)", fontSize: 12, lineHeight: 1.65 }}>
+          鲸伴提供免费的寻宠信息整理、扩散文案和线索收集工具。你可以自行分享到微信群、朋友圈、小红书和本地宠物群，让更多附近的人看到。
+        </p>
         <div style={{ display: "grid", gap: 10 }}>
-          {[
-            { name: "29元基础扩散包", price: "29元 / 次", description: "快速整理信息、生成基础海报和多平台扩散文案。", color: "var(--teal)" },
-            { name: "199元安心扩散包", price: "199元 / 次", description: "进一步优化海报、传播文案和线索整理提醒。", color: "var(--coral)", badge: "推荐" },
-            { name: "699元城市协助包", price: "699元 / 3天", description: "提供持续信息跟进和一对一人工沟通协助。", color: "var(--violet)", badge: "人工协助" },
-          ].map((item) => (
-            <article key={item.name} style={{ padding: 14, background: "#fff", border: "1px solid var(--line)", borderLeft: `4px solid ${item.color}`, borderRadius: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                <strong style={{ fontSize: 14 }}>{item.name}</strong>
-                {item.badge && <small style={{ color: item.color, fontWeight: 800 }}>{item.badge}</small>}
-              </div>
-              <strong style={{ display: "block", margin: "7px 0", color: item.color, fontSize: 17 }}>{item.price}</strong>
-              <p style={{ margin: 0, color: "var(--muted)", fontSize: 11, lineHeight: 1.6 }}>{item.description}</p>
+          {selfServeSpreadTools.map((item) => {
+            const Icon = item.icon;
+            return (
+            <article key={item.title} style={{ display: "grid", gridTemplateColumns: "42px 1fr", gap: 11, alignItems: "start", padding: 14, background: "#fff", border: "1px solid var(--line)", borderLeft: `4px solid ${item.color}`, borderRadius: 8 }}>
+              <span style={{ width: 42, height: 42, display: "grid", placeItems: "center", color: item.color, background: "#f7faf9", borderRadius: 7 }}>
+                <Icon size={21} />
+              </span>
+              <span>
+                <strong style={{ display: "block", marginBottom: 6, fontSize: 14 }}>{item.title}</strong>
+                <span style={{ display: "block", color: "var(--muted)", fontSize: 11, lineHeight: 1.6 }}>{item.description}</span>
+              </span>
             </article>
-          ))}
+            );
+          })}
         </div>
         <p style={{ margin: "12px 0", color: "#665711", background: "#fff7d6", padding: 11, fontSize: 11, lineHeight: 1.65 }}>
-          服务仅包含信息整理、扩散素材、线索中转和人工协助。平台不对找回结果作出承诺，不提供线下搜寻或动物诊疗。
+          鲸伴不承诺找回结果，不提供线下搜寻、抓捕或动物诊疗服务。平台提供的是信息整理、扩散文案和线索收集工具。
         </p>
-        <Link className="primary-button" style={{ width: "100%" }} href="/lost/new">先发布寻宠信息</Link>
+        <Link className="primary-button" style={{ width: "100%" }} href="/lost/new">免费发布寻宠信息</Link>
       </section>
 
       <section className="home-section" aria-label="平台信任与使用说明" style={{ display: "grid", gap: 12, paddingTop: 0 }}>
