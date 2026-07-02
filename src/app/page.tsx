@@ -291,6 +291,8 @@ export default async function Home() {
           <h2 id="invite-entry-title" style={{ display: "flex", alignItems: "center", gap: 7, margin: "0 0 8px", fontSize: 19 }}><HeartHandshake size={20} /> 成为鲸伴寻宠传播员</h2>
           <p style={{ margin: "0 0 14px", color: "#46535c", fontSize: 12, lineHeight: 1.65 }}>生成你的专属分享链接，把鲸伴分享给同城宠物群和朋友。朋友通过你的链接发布寻宠信息后，平台会记录公益传播来源。</p>
           <Link className="primary-button" style={{ width: "100%" }} href="/invite">生成我的分享链接</Link>
+          <p style={{ margin: "12px 0 8px", color: "#46535c", fontSize: 12, lineHeight: 1.65 }}>用一次转发、一条线索，帮助更多走失宠物被看见。</p>
+          <Link className="secondary-button" style={{ width: "100%" }} href="/volunteer">加入城市互助志愿者</Link>
         </article>
       </section>
 
